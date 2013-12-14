@@ -31,10 +31,9 @@ class Server():
                 self.method,self.url,self.proto=self.validReq(request)
                 cgiRE=re.compile('/cgi-bin/')
                 isCGI=cgiRE.search(self.url)
-                htmlRe=re.compile('\w+.html')
-                isHTML=htmlRe.findall(self.url)
                 if self.url!=None:
-                    if self.url=="/":
+
+                    if self.url=='/':
                         msg="""
                     <!DOCTYPE html>
                     <html>
@@ -56,7 +55,7 @@ class Server():
                     #if self.url=="/sign":
 
 
-                    if self.url=="/register":
+                    elif self.url=="/register":
                         match=re.compile('Authorization: \w+ \w+')
                         auth=match.findall(request)
                         if auth.__len__()==0:
@@ -78,14 +77,14 @@ class Server():
                                 self.conn.commit()
                                 self.sendResponse('Registration completed successfully',conn)
                             cur.close()
-                    if self.url=="/time":
+                    elif self.url=="/time":
                         dt=datetime.datetime.now()
                         msg="now date:  "+str(dt)
                         self.sendResponse(msg,conn)
-                    if self.url=="/ya":
+                    elif self.url=="/ya":
                         self.sendResponsewitnCockie(conn)
 
-                    if self.url=="/help":
+                    elif self.url=="/help":
                         ROOT_PATH=os.path.dirname(__file__)
                         ROOT_PATH+='/cgi-bin'
                         arrCmd=os.listdir(ROOT_PATH)
@@ -95,13 +94,7 @@ class Server():
                            cmdLine+=arrCmd[i]+'\r\n'
                            i+=1
                         self.sendResponse(cmdLine,conn)
-                    if isHTML:
-                        msg=""
-                        ROOT_PATH=os.path.dirname(__file__)
-                        for line in open(ROOT_PATH+'/'+isHTML[0]):
-                            msg+=line
-                        self.sendHTMLResponse(msg,conn)
-                    if isCGI:
+                    elif isCGI:
                         req=self.url.split('/')
                         script=req[2]
                         name=script.split('?')[0]
@@ -123,10 +116,10 @@ class Server():
                             self.sendResponse(res,conn)
                         except:
                             self.sendBadResponse('Not found this Script',conn)
-                    if self.url=="/help":
+                    elif self.url=="/help":
                         ROOT_PATH=os.path.dirname(__file__)
                         ROOT_PATH+='/cgi-bin/'
-                    if self.url.startswith("/student"):
+                    elif self.url.startswith("/student"):
                         param=self.getParam(self.url)
                         id=param[0].split("=")[1] # take value without name
                         cur=self.conn.cursor()
@@ -135,6 +128,15 @@ class Server():
                         name=cur.__next__()[0]
                         mes+=name
                         self.sendResponse(mes,conn)
+                    else:
+                        ROOT_PATH=os.path.dirname(__file__)
+                        ROOT_PATH+=self.url
+                        f=open(ROOT_PATH,'rb').read()
+                        self.sendMsg("HTTP/1.0 200 OK\r\n",conn)
+                        self.sendMsg("Server: OwnHands/0.1\r\n",conn)
+                        self.sendMsg("Content-Type: */*\r\n",conn)
+                        self.sendMsg("\r\n",conn)
+                        conn.send(f)
                     conn.close()
                     break
     def startScript(self,name,arrParam):
